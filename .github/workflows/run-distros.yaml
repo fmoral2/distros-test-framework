@@ -35,6 +35,15 @@ jobs:
         with:
           go-version: '1.20'
 
+      - name: Scan for vulnerabilities
+        uses: crazy-max/ghaction-container-scan@v3
+        with:
+          image: acceptance-tests
+          severity_threshold: HIGH
+          annotations: true
+          args: --timeout 10m
+
+
       - name: golangci-lint
         if: success()
         uses: golangci/golangci-lint-action@v3
