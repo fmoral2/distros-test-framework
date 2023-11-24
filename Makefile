@@ -101,6 +101,10 @@ test-create-mixedos:
 test-create-dualstack:
 	@go test -timeout=45m -v -count=1 ./entrypoint/dualstack/...
 
+.PHONY: test-restart-service
+test-restart-service:
+	@go test -timeout=45m -v -count=1 ./entrypoint/restartservice/...
+
 .PHONY: test-version-bump
 test-version-bump:
 	@go test -timeout=45m -v -count=1 ./entrypoint/versionbump/... -tags=versionbump \
