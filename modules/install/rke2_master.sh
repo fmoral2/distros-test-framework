@@ -1,9 +1,13 @@
 #!/bin/bash
-# This script installs the first master, ensuring first master is installed
+# This script installs the first server, ensuring first server is installed
 # and ready before proceeding to install other nodes
-#!/bin/bash
-set -x
+
 echo "$@"
+# the following lines are to enable debug mode
+set -x
+PS4='+(${LINENO}): '
+set -e
+trap 'echo "Error on line $LINENO: $BASH_COMMAND"' ERR
 
 node_os=$1
 create_lb=$2
@@ -27,7 +31,7 @@ EOF
 
 if [ -n "$server_flags" ] && [[ "$server_flags" == *":"* ]]
 then
-   echo "$server_flags"
+   echo -e "$server_flags"
    echo -e "$server_flags" >> /etc/rancher/rke2/config.yaml
    if [[ "$server_flags" != *"cloud-provider-name"* ]]
    then
@@ -38,24 +42,25 @@ else
   echo -e "node-external-ip: $public_ip" >> /etc/rancher/rke2/config.yaml
 fi
 
-if [[ "$node_os" = "rhel" ]]
+if [ "$node_os" = "rhel" ]
 then
-   subscription-manager register --auto-attach --username="$rhel_username" --password="$rhel_password"
-   subscription-manager repos --enable=rhel-7-server-extras-rpms
+    subscription-manager register --auto-attach --username="$rhel_username" --password="$rhel_password" || echo "Failed to register or attach subscription."
+
+    subscription-manager repos --enable=rhel-7-server-extras-rpms || echo "Failed to enable repositories."
 fi
 
-if [[ "$node_os" = *"centos"* ]] || [[ "$node_os" = *"rhel"* ]] || [[ "$node_os" = *"oracle"* ]]
-then
-  NM_CLOUD_SETUP_SERVICE_ENABLED=$(systemctl status nm-cloud-setup.service | grep -i enabled)
-  NM_CLOUD_SETUP_TIMER_ENABLED=$(systemctl status nm-cloud-setup.timer | grep -i enabled)
+if [[ "$node_os" = *"rhel"* ]] || [[ "$node_os" = "centos8" ]]; then
+    if systemctl is-enabled --quiet nm-cloud-setup.service 2>/dev/null; then
+       systemctl disable nm-cloud-setup.service
+    else
+       echo "nm-cloud-setup.service not found or not enabled"
+    fi
 
-  if [ "${NM_CLOUD_SETUP_SERVICE_ENABLED}" ]; then
-  systemctl disable nm-cloud-setup.service
-  fi
-
-  if [ "${NM_CLOUD_SETUP_TIMER_ENABLED}" ]; then
-  systemctl disable nm-cloud-setup.timer
-  fi
+    if systemctl is-enabled --quiet nm-cloud-setup.timer 2>/dev/null; then
+       systemctl disable nm-cloud-setup.timer
+    else
+       echo "nm-cloud-setup.timer not found or not enabled"
+fi
 
   yum install tar -y
   yum install iptables -y
@@ -69,6 +74,7 @@ then
 fi
 
 export "$install_mode"="$rke2_version"
+
 if [ -n "$install_method" ]
 then
   export INSTALL_RKE2_METHOD="$install_method"

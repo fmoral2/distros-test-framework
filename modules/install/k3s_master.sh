@@ -1,8 +1,10 @@
 #!/bin/bash
 
-## Uncomment the following lines to enable debug mode
-#set -x
-# PS4='+(${LINENO}): '
+# the following lines are to enable debug mode
+set -x
+PS4='+(${LINENO}): '
+set -e
+trap 'echo "Error on line $LINENO: $BASH_COMMAND"' ERR
 
 create_directories() {
   mkdir -p /etc/rancher/k3s
@@ -51,35 +53,34 @@ policy_files() {
   fi
 }
 
-rhel() {
+subscription_manager() {
    local node_os="${1}"
    local username="${2}"
    local password="${3}"
 
-  if [ "$node_os" = "rhel" ]
-    then
-      subscription-manager register --auto-attach --username="$username" --password="$password"
-      subscription-manager repos --enable=rhel-7-server-extras-rpms
-  fi
+   if [ "$node_os" = "rhel" ]; then
+      subscription-manager register --auto-attach --username="$username" --password="$password" || echo "Failed to register or attach subscription."
+
+      subscription-manager repos --enable=rhel-7-server-extras-rpms || echo "Failed to enable repositories."
+   fi
 }
 
 disable_cloud_setup() {
    local node_os="${1}"
 
-if  [[ "$node_os" = *"rhel"* ]] || [[ "$node_os" = *"centos"* ]]
-  then
-    NM_CLOUD_SETUP_SERVICE_ENABLED=$(systemctl status nm-cloud-setup.service | grep -i enabled)
-    NM_CLOUD_SETUP_TIMER_ENABLED=$(systemctl status nm-cloud-setup.timer | grep -i enabled)
+   if [[ "$node_os" = *"rhel"* ]] || [[ "$node_os" = "centos8" ]]; then
+      if systemctl is-enabled --quiet nm-cloud-setup.service 2>/dev/null; then
+         systemctl disable nm-cloud-setup.service
+      else
+         echo "nm-cloud-setup.service not found or not enabled"
+      fi
 
-    if [ "${NM_CLOUD_SETUP_SERVICE_ENABLED}" ]; then
-    systemctl disable nm-cloud-setup.service
-    fi
-
-    if [ "${NM_CLOUD_SETUP_TIMER_ENABLED}" ]; then
-    systemctl disable nm-cloud-setup.timer
-    fi
-fi
-
+      if systemctl is-enabled --quiet nm-cloud-setup.timer 2>/dev/null; then
+         systemctl disable nm-cloud-setup.timer
+      else
+         echo "nm-cloud-setup.timer not found or not enabled"
+      fi
+   fi
 }
 
 export "${3}"="${4}"
@@ -92,7 +93,6 @@ install() {
 
   if [ "$datastore_type" = "etcd" ]
   then
-     echo "CLUSTER TYPE is ETCD and channel is $channel"
      if [[ "$version" == *"v1.18"* ]] || [[ "$version" == *"v1.17"* ]]
      then
          curl -sfL https://get.k3s.io | INSTALL_K3S_TYPE='server' sh -s - server
@@ -104,8 +104,8 @@ install() {
              curl -sfL https://get.k3s.io | INSTALL_K3S_TYPE='server' sh -s - server
          fi
      fi
-  else
-    echo "CLUSTER TYPE is external db and channel is $channel"
+  elif  [[ "$datastore_type" = "external" ]]
+   then
     if [[ "$version" == *"v1.18"* ]] || [[ "$version" == *"v1.17"* ]]
     then
         curl -sfL https://get.k3s.io | sh -s - server --datastore-endpoint="$datastore_endpoint"
@@ -194,7 +194,6 @@ config_files() {
   cat /etc/rancher/k3s/k3s.yaml >/tmp/config
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   sudo chmod 644 /etc/rancher/k3s/k3s.yaml
-  export alias k=kubectl
 }
 
 main() {
@@ -202,7 +201,7 @@ main() {
   create_config "$2" "$6"
   add_config "$8"
   policy_files "$8" "$4"
-  rhel "$1" "$9" "${10}"
+  subscription_manager "$1" "$9" "${10}"
   disable_cloud_setup "$1"
   install "$5" "$4" "${11}" "$7"
   wait_nodes
