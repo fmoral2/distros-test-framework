@@ -31,10 +31,10 @@ jobs:
       - name: Set env variables
         shell: bash
         env:
-            QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
-            QASE_PROJECT_CODE: 'DEMO'
-            PLAN_ID: '3'
-            TAG: 'team-rke2'
+          QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
+          QASE_PROJECT_CODE: 'DEMO'
+          QASE_TEST_PLAN_ID: '3'
+          QASE_TAG: 'team-rke2'
         run: |
           echo "Setting env variables"
           echo "QASE_PROJECT_CODE=$QASE_PROJECT_CODE" >> $GITHUB_ENV
@@ -45,23 +45,22 @@ jobs:
           echo "CURRENT_YEAR=$CURRENT_YEAR" >> $GITHUB_ENV
           
           echo "QASE_API_TOKEN=$QASE_API_TOKEN" >> $GITHUB_ENV
-          echo "PLAN_ID=$PLAN_ID" >> $GITHUB_ENV
-          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "QASE_TEST_PLAN_ID=$QASE_TEST_PLAN_ID" >> $GITHUB_ENV
+          echo "QASE_TAG=$QASE_TAG" >> $GITHUB_ENV
           
-          MILESTONE="$CURRENT_YEAR-$CURRENT_MONTH Patch release"
-          echo "MILESTONE=$MILESTONE" >> $GITHUB_ENV
+          QASE_MILESTONE="$CURRENT_YEAR-$CURRENT_MONTH Patch release"
+          echo "QASE_MILESTONE=$QASE_MILESTONE" >> $GITHUB_ENV
 
       - name: Create Qase Milestone
         env:
           QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
           QASE_PROJECT_CODE: ${{ env.QASE_PROJECT_CODE }}
-          MILESTONE: ${{ env.MILESTONE }}
+          QASE_MILESTONE: ${{ env.QASE_MILESTONE }}
         run: |
-            echo "Creating Qase Milestone:" $MILESTONE
-            MILESTONE_ID=$(./scripts/qase-patch-validation.sh true "$MILESTONE")
+          echo "Creating Qase Milestone:" $MILESTONE
+          MILESTONE_ID=$(./scripts/qase-patch-validation.sh true "$QASE_MILESTONE")
           
-            echo "MILESTONE_ID=$MILESTONE_ID" >> $GITHUB_ENV
-          
+          echo "MILESTONE_ID=$MILESTONE_ID" >> $GITHUB_ENV
 
       - name: Process Versions and RCs
         shell: bash
@@ -79,7 +78,7 @@ jobs:
             echo "Error: Number of versions and RCs do not match."
             exit 1
           fi
- 
+          
           echo "VERSIONS<<EOF" >> $GITHUB_ENV
           printf "%s\n" "${versions_to_process[@]}" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -94,14 +93,14 @@ jobs:
           MILESTONE_ID: ${{ env.MILESTONE_ID }}
           QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
           QASE_PROJECT_CODE: ${{ env.QASE_PROJECT_CODE }}
-          PLAN_ID: ${{ env.PLAN_ID }}
-          TAG: ${{ env.TAG }}
+          QASE_TEST_PLAN_ID: ${{ env.QASE_TEST_PLAN_ID }}
+          QASE_TAG: ${{ env.QASE_TAG }}
           All_VERSIONS: ${{ env.VERSIONS }}
           All_RCS: ${{ env.RCS }}
         run: |
           mapfile -t versions <<< "${All_VERSIONS}"
           mapfile -t rcs <<< "${All_RCS}"
- 
+          
           for ((i=0; i<${#versions[@]}; i++)); do
             VERSION="${versions[$i]}"
             RC="${rcs[$i]}"
@@ -112,10 +111,11 @@ jobs:
             echo "Creating Qase Test Run with:"
             echo "Title: $TITLE"
             echo "Description: $DESCRIPTION"
-            echo "Milestone: ${{ env.MILESTONE }}"
+            echo "Milestone: ${{ env.QASE_MILESTONE }}"
           
               ./scripts/qase-patch-validation.sh 
           done
+
 
 
 

@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 
 # Qase Patch Validation Run Creation Script.
- 
+
 PS4='+(${LINENO}): '
 set -e
 trap 'echo "Error on line $LINENO: $BASH_COMMAND"' ERR
 
 CREATE_MILESTONE=${1}
-MILESTONE=${2}
+QASE_MILESTONE=${2}
 
 validate_params() {
   validate_token
     if [[ -z "$QASE_PROJECT_CODE" ]]; then
-        echo "Error: Missing required var PROJECT_CODE."
+        echo "Error: Missing required var QASE_PROJECT_CODE."
         exit 1
     fi
 
-    if [[ -z "$PLAN_ID" ]]; then
-        echo "Error: Missing required var PLAN_ID."
+    if [[ -z "$QASE_TEST_PLAN_ID" ]]; then
+        echo "Error: Missing required var QASE_TEST_PLAN_ID."
         exit 1
     fi
 
-    if [[ -z "$TAG" ]]; then
-        echo "Error: Missing required var TAG_NAME."
+    if [[ -z "$QASE_TAG" ]]; then
+        echo "Error: Missing required var QASE_TA."
         exit 1
     fi
 }
@@ -35,8 +35,8 @@ validate_token() {
 }
 
 create_milestone() {
-    if [[ -z "$MILESTONE" ]]; then
-        echo "Error: Missing required MILESTONE_NAME."
+    if [[ -z "$QASE_MILESTONE" ]]; then
+        echo "Error: Missing required QASE_MILESTONE."
         exit 1
     fi
 
@@ -45,7 +45,7 @@ create_milestone() {
         --header "Token: $QASE_API_TOKEN" \
         --header 'Content-Type: application/json' \
         --data '{
-                "title": "'"$MILESTONE"'"
+                "title": "'"$QASE_MILESTONE"'"
             }')
 
     # extract milestone ID from response.
@@ -60,7 +60,7 @@ create_milestone() {
 
 # Function to create test run with given parameters being: title, description, milestone id,plan id and tag.
 create_test_run() {
-     TAG_JSON='["'"$TAG"'"]'
+     TAG_JSON='["'"$QASE_TAG"'"]'
 
     RESPONSE=$(curl --request POST \
         --url "https://api.qase.io/v1/run/$QASE_PROJECT_CODE" \
@@ -72,7 +72,7 @@ create_test_run() {
                 "milestone_id": '"$MILESTONE_ID"',
                 "tags": '"$TAG_JSON"',
                 "include_all_cases": false,
-                "plan_id": '"$PLAN_ID"'
+                "plan_id": '"$QASE_TEST_PLAN_ID"'
             }')
 
     echo "response status is: $RESPONSE"
