@@ -4,10 +4,13 @@ import (
 	"strings"
 
 	"github.com/rancher/distros-test-framework/pkg/assert"
+	"github.com/rancher/distros-test-framework/pkg/aws"
 	"github.com/rancher/distros-test-framework/shared"
 
 	. "github.com/onsi/gomega"
 )
+
+var newNodeIP string
 
 func TestServiceClusterIP(applyWorkload, deleteWorkload bool) {
 	var workloadErr error
@@ -68,7 +71,19 @@ func TestServiceNodePort(applyWorkload, deleteWorkload bool) {
 	}
 }
 
-func TestServiceLoadBalancer(applyWorkload, deleteWorkload bool) {
+func TestServiceLoadBalancer(cluster *shared.Cluster, awsClient *aws.Client, applyWorkload, deleteWorkload bool) {
+	if newNodeIP == "" {
+		newNodeName := "distros-qa-test-node-" + cluster.Config.Product
+		externalIPs, _, _, _ := awsClient.CreateInstances(newNodeName)
+		Expect(externalIPs).NotTo(BeEmpty(), "error creating instance, externalIPs empty")
+
+		newNodeIP = externalIPs[0]
+
+		shared.LogLevel("info", "new node ip: %s", newNodeIP)
+	} else {
+		shared.LogLevel("info", "new node ip already exists: %s", newNodeIP)
+	}
+
 	var workloadErr error
 	if applyWorkload {
 		workloadErr = shared.ManageWorkload("apply", "loadbalancer.yaml")
@@ -92,7 +107,8 @@ func TestServiceLoadBalancer(applyWorkload, deleteWorkload bool) {
 	Expect(err).NotTo(HaveOccurred(), err)
 
 	for _, node := range validNodes {
-		err = assert.ValidateOnHost(
+		err = assert.ValidateOnNode(
+			newNodeIP,
 			"curl -sL --insecure http://"+node.ExternalIP+":"+port+"/name.html",
 			expectedPodName)
 		Expect(err).NotTo(HaveOccurred(), err)
@@ -101,6 +117,9 @@ func TestServiceLoadBalancer(applyWorkload, deleteWorkload bool) {
 	if deleteWorkload {
 		workloadErr = shared.ManageWorkload("delete", "loadbalancer.yaml")
 		Expect(workloadErr).NotTo(HaveOccurred(), "Loadbalancer manifest not deleted")
+
+		delErr := awsClient.DeleteInstance(newNodeIP)
+		Expect(delErr).NotTo(HaveOccurred(), "error deleting instance")
 	}
 }
 

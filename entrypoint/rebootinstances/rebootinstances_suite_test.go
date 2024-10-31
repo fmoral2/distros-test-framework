@@ -15,7 +15,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var cluster *shared.Cluster
+var (
+	cluster   *shared.Cluster
+	awsClient *aws.Client
+)
 
 func TestMain(m *testing.M) {
 	flag.Var(&customflag.ServiceFlag.Destroy, "destroy", "Destroy cluster after test")
@@ -36,6 +39,12 @@ func TestMain(m *testing.M) {
 	} else {
 		// gets a cluster from kubeconfig.
 		cluster = shared.KubeConfigCluster(kubeconfig)
+	}
+
+	awsClient, err = aws.AddClient(cluster)
+	if err != nil {
+		shared.LogLevel("error", "error adding aws client: %w\n", err)
+		os.Exit(1)
 	}
 
 	os.Exit(m.Run())
