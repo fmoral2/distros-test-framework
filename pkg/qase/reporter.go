@@ -6,10 +6,11 @@ import (
 	"os"
 	"strconv"
 
-	. "github.com/onsi/ginkgo/v2"
+	"github.com/emicklei/go-restful/v3/log"
+
 	qaseclient "github.com/qase-tms/qase-go/qase-api-client"
 
-	"github.com/rancher/distros-test-framework/shared"
+	. "github.com/onsi/ginkgo/v2"
 )
 
 const (
@@ -52,7 +53,7 @@ type createResultRequest struct {
 
 // ReportTestResults receives the report from ginkgo and sends the test results to Qase.
 func (c Client) ReportTestResults(ctx context.Context, report *Report, version string) {
-	shared.LogLevel("info", "Start publishing test results to Qase\n")
+	log.Print("Start publishing test results to Qase\n")
 
 	runID, tcID := validateQaseIDs()
 
@@ -70,28 +71,28 @@ func (c Client) ReportTestResults(ctx context.Context, report *Report, version s
 	request := parseResults(tcs, version, &req)
 
 	if err := c.createTestResult(ctx, request); err != nil {
-		shared.LogLevel("error", "failed to create test result: %w\n", err)
+		log.Printf("failed to create test result: %w\n", err)
 	}
 }
 
 // validateQaseIDs validates the Qase Run ID and Test Case ID and returns parsed as int and int64 respectively.
 func validateQaseIDs() (runID int, tcID *int64) {
 	if projectID == "" {
-		shared.LogLevel("error", "QASE_PROJECT_ID is not set")
+		log.Print("error", "QASE_PROJECT_ID is not set")
 	}
 
 	if qaseRunID == "" {
-		shared.LogLevel("error", "QASE_RUN_ID is not set")
+		log.Print("error", "QASE_RUN_ID is not set")
 	}
 
 	runID, err := strconv.Atoi(qaseRunID)
 	if err != nil {
-		shared.LogLevel("error", "invalid QASE_RUN_ID: %w\n", err)
+		log.Printf("invalid QASE_RUN_ID: %w\n", err)
 	}
 
 	caseIDInt, err := strconv.ParseInt(caseID, 10, 64)
 	if err != nil {
-		shared.LogLevel("error", "invalid QASE_TEST_CASE_ID: %w\n", err)
+		log.Printf("invalid QASE_TEST_CASE_ID: %w\n", err)
 	}
 	tcID = &caseIDInt
 
@@ -176,7 +177,11 @@ func (c Client) createTestResult(ctx context.Context, req *createResultRequest) 
 		return fmt.Errorf("failed to create test result: %w, response: %v", err, httpRes)
 	}
 
-	shared.LogLevel("info", "Test result created: %v\n", &res.Status)
+	log.Printf("Test result created: %v\n", &res.Status)
 
 	return nil
+}
+
+func publishFinalize() {
+
 }

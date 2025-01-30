@@ -8,6 +8,7 @@ require (
 	github.com/gruntwork-io/terratest v0.46.11
 	github.com/onsi/ginkgo/v2 v2.16.0
 	github.com/onsi/gomega v1.31.1
+	github.com/rancher/distros-test-framework/pkg/qase v0.0.0-20250130170058-50b588f6b994
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/crypto v0.28.0
 	k8s.io/api v0.28.4
@@ -67,6 +68,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/qase-tms/qase-go/qase-api-client v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/tmccombs/hcl2json v0.6.2 // indirect
@@ -104,3 +106,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/rancher/distros-test-framework/pkg/qase => ./pkg/qase
