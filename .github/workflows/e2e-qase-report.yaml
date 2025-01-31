@@ -1,0 +1,52 @@
+name: Qase.io E2E Test Report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */24 * * *'
+
+jobs:
+  fetch-and-process-logs:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Set Permission for script
+        run: chmod +x ./scripts/e2e-qase-report.sh
+
+      - name: Get latest log file
+        id: get-latest-log
+        run: |
+          # Get the latest {product}.log file from the bucket
+          LATEST_LOG=$(aws s3api list-objects-v2 \
+          --bucket e2e-results-log \
+          --query 'Contents[?ends_with(Key, `.log`)] | sort_by(@, &LastModified)[-1].Key' \
+          --output text)
+          
+          # print the latest log file
+            echo "Latest log file: $LATEST_LOG"
+          
+          # Download the file
+          aws s3 cp s3://e2e-results-log/$LATEST_LOG ./latest_e2e.log
+          
+          # Set the log path as an output
+          echo "log_path=latest_e2e.log" >> $GITHUB_OUTPUT
+
+      - name: Process log file
+        id: process-log
+        run: |
+          ./scripts/e2e-qase-report.sh  ${{ steps.get-latest-log.outputs.log_path }}
+
+      # Add more steps as needed for your internal processing
