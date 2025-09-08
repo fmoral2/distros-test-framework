@@ -19,7 +19,7 @@ func ManageWorkload(action string, workloads ...string) error {
 		return ReturnLogError("invalid action: %s. Must be 'apply' or 'delete'", action)
 	}
 
-	// todo:fix this
+	// todo:
 	arch := os.Getenv("arch")
 	if arch == "" {
 		arch = "amd64"

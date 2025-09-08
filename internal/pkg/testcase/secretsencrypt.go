@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
+	"github.com/rancher/distros-test-framework/internal/provisioning/driver"
 	"github.com/rancher/distros-test-framework/internal/resources"
 
 	. "github.com/onsi/gomega"
 )
 
-func TestSecretsEncryption(cluster *resources.Cluster, flags *customflag.FlagConfig) {
+func TestSecretsEncryption(cluster *driver.Cluster, flags *customflag.FlagConfig) {
 	nodes, errGetNodes := resources.GetNodesByRoles("etcd", "control-plane")
 	Expect(nodes).NotTo(BeEmpty())
 	Expect(errGetNodes).NotTo(HaveOccurred(), "error getting etcd/control-plane nodes\n%v", errGetNodes)

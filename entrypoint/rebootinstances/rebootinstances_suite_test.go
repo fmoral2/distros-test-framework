@@ -7,11 +7,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rancher/distros-test-framework/pkg/aws"
-	"github.com/rancher/distros-test-framework/pkg/customflag"
-	"github.com/rancher/distros-test-framework/pkg/qase"
-	"github.com/rancher/distros-test-framework/shared"
 	"github.com/rancher/distros-test-framework/config"
+	"github.com/rancher/distros-test-framework/internal/pkg/aws"
+	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
+	"github.com/rancher/distros-test-framework/internal/pkg/qase"
+	"github.com/rancher/distros-test-framework/internal/resources"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,7 +20,7 @@ import (
 var (
 	qaseReport    = os.Getenv("REPORT_TO_QASE")
 	flags         = &customflag.ServiceFlag
-	cluster       *shared.Cluster
+	cluster       *resources.Cluster
 	cfg           *config.Env
 	reportSummary string
 	reportErr     error
@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 	cfg, err = config.AddEnv()
 	if err != nil {
-		shared.LogLevel("error", "error adding env vars: %w\n", err)
+		resources.LogLevel("error", "error adding env vars: %w\n", err)
 		os.Exit(1)
 	}
 
@@ -43,10 +43,10 @@ func TestMain(m *testing.M) {
 	kubeconfig := os.Getenv("KUBE_CONFIG")
 	if kubeconfig == "" {
 		// gets a cluster from terraform.
-		cluster = shared.ClusterConfig(cfg.Product, cfg.Module)
+		cluster = resources.ClusterConfig(cfg.Product, cfg.Module)
 	} else {
 		// gets a cluster from kubeconfig.
-		cluster = shared.KubeConfigCluster(kubeconfig)
+		cluster = resources.KubeConfigCluster(kubeconfig)
 	}
 
 	os.Exit(m.Run())
@@ -65,18 +65,18 @@ var _ = ReportAfterSuite("Reboot Instances Test Suite", func(report Report) {
 
 		qaseClient.SpecReportTestResults(qaseClient.Ctx, cluster, &report, reportSummary)
 	} else {
-		shared.LogLevel("info", "Qase reporting is not enabled")
+		resources.LogLevel("info", "Qase reporting is not enabled")
 	}
 })
 
 var _ = AfterSuite(func() {
-	reportSummary, reportErr = shared.SummaryReportData(cluster, flags)
+	reportSummary, reportErr = resources.SummaryReportData(cluster, flags)
 	if reportErr != nil {
-		shared.LogLevel("error", "error getting report summary data: %v\n", reportErr)
+		resources.LogLevel("error", "error getting report summary data: %v\n", reportErr)
 	}
 
 	if customflag.ServiceFlag.Destroy {
-		status, err := shared.DestroyInfrastructure(cfg.Product, cfg.Module)
+		status, err := resources.DestroyInfrastructure(cfg.Product, cfg.Module)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(status).To(Equal("cluster destroyed"))
 	}
@@ -86,7 +86,7 @@ var _ = AfterSuite(func() {
 
 func validateEIP() {
 	if os.Getenv("create_eip") == "" || os.Getenv("create_eip") != "true" {
-		shared.LogLevel("error", "create_eip not set")
+		resources.LogLevel("error", "create_eip not set")
 		os.Exit(1)
 	}
 }
@@ -95,7 +95,7 @@ func validateEIP() {
 func cleanEIPs() {
 	release := os.Getenv("RELEASE_EIP")
 	if release != "" && release == "false" {
-		shared.LogLevel("info", "EIPs not released, being used to run test with kubeconfig")
+		resources.LogLevel("info", "EIPs not released, being used to run test with kubeconfig")
 	} else {
 		awsDependencies, err := aws.AddClient(cluster)
 		Expect(err).NotTo(HaveOccurred())
@@ -110,7 +110,7 @@ func cleanEIPs() {
 				defer wg.Done()
 				releaseEIPsErr := awsDependencies.ReleaseElasticIps(ip)
 				if releaseEIPsErr != nil {
-					shared.LogLevel("error", "on %w", releaseEIPsErr)
+					resources.LogLevel("error", "on %w", releaseEIPsErr)
 					return
 				}
 			}(ip)

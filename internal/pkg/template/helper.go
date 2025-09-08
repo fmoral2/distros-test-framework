@@ -4,33 +4,32 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rancher/distros-test-framework/config"
-
 	"github.com/rancher/distros-test-framework/internal/pkg/assert"
 	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
-	"github.com/rancher/distros-test-framework/internal/pkg/k8s"
 	"github.com/rancher/distros-test-framework/internal/pkg/testcase"
 	"github.com/rancher/distros-test-framework/internal/resources"
+
+	"github.com/rancher/distros-test-framework/internal/provisioning/driver"
 )
 
 // upgradeVersion upgrades the product version.
-func upgradeVersion(template TestTemplate, k8sClient *k8s.Client, version string) error {
-	cfg, cfgErr := config.AddEnv()
-	if cfgErr != nil {
-		return fmt.Errorf("error adding env vars: %w", cfgErr)
-	}
+// func upgradeVersion(template TestTemplate, k8sClient *k8s.Client, version string) error {
+// 	cfg, cfgErr := config.AddEnv()
+// 	if cfgErr != nil {
+// 		return fmt.Errorf("error adding env vars: %w", cfgErr)
+// 	}
 
-	// TODO: FIX THIS, We should not call the whole stuff just to pass some data to manual upgrade.
-	cluster := resources.AddConfig(cfg.Product, cfg.Module)
-	err := testcase.TestUpgradeClusterManual(cluster, k8sClient, version)
-	if err != nil {
-		return err
-	}
+// 	// TODO: FIX THIS, We should not call the whole stuff just to pass some data to manual upgrade.
+// 	cluster := resources.AddConfig(cfg.Product, cfg.Module)
+// 	err := testcase.TestUpgradeClusterManual(cluster, k8sClient, version)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	updateExpectedValue(template)
+// 	updateExpectedValue(template)
 
-	return nil
-}
+// 	return nil
+// }
 
 // updateExpectedValue updates the expected values getting the values from flag ExpectedValueUpgrade.
 func updateExpectedValue(template TestTemplate) {
@@ -62,7 +61,7 @@ func executeTestCombination(template TestTemplate) error {
 }
 
 // AddTestCases returns the test case based on the name to be used as customflag.
-func AddTestCases(cluster *resources.Cluster, names []string) ([]testCase, error) {
+func AddTestCases(cluster *driver.Cluster, names []string) ([]testCase, error) {
 	tcs := addTestCaseMap(cluster)
 	return processTestCaseNames(tcs, names)
 }
@@ -70,7 +69,7 @@ func AddTestCases(cluster *resources.Cluster, names []string) ([]testCase, error
 // addTestCaseMap initializes and returns the map of test cases.
 //
 //nolint:revive // we want to keep the argument for visibility.
-func addTestCaseMap(cluster *resources.Cluster) map[string]testCase {
+func addTestCaseMap(cluster *driver.Cluster) map[string]testCase {
 	return map[string]testCase{
 		"TestDaemonset":        testcase.TestDaemonset,
 		"TestIngress":          testcase.TestIngress,

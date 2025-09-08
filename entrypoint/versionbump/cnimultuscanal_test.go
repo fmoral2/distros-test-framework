@@ -5,10 +5,10 @@ package versionbump
 import (
 	"fmt"
 
-	"github.com/rancher/distros-test-framework/pkg/assert"
-	. "github.com/rancher/distros-test-framework/pkg/customflag"
-	. "github.com/rancher/distros-test-framework/pkg/template"
-	"github.com/rancher/distros-test-framework/pkg/testcase"
+	"github.com/rancher/distros-test-framework/internal/pkg/assert"
+	. "github.com/rancher/distros-test-framework/internal/pkg/customflag"
+	. "github.com/rancher/distros-test-framework/internal/pkg/template"
+	"github.com/rancher/distros-test-framework/internal/pkg/testcase"
 
 	. "github.com/onsi/ginkgo/v2"
 )

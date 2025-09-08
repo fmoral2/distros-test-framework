@@ -5,11 +5,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rancher/distros-test-framework/pkg/customflag"
-	"github.com/rancher/distros-test-framework/pkg/k8s"
-	"github.com/rancher/distros-test-framework/pkg/testcase"
-	"github.com/rancher/distros-test-framework/shared"
 	"github.com/rancher/distros-test-framework/config"
+	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
+	"github.com/rancher/distros-test-framework/internal/pkg/k8s"
+	"github.com/rancher/distros-test-framework/internal/pkg/testcase"
+	"github.com/rancher/distros-test-framework/internal/resources"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,7 +17,7 @@ import (
 
 var (
 	kubeconfig string
-	cluster    *shared.Cluster
+	cluster    *resources.Cluster
 	k8sClient  *k8s.Client
 	cfg        *config.Env
 	err        error
@@ -31,22 +31,22 @@ func TestMain(m *testing.M) {
 
 	cfg, err = config.AddEnv()
 	if err != nil {
-		shared.LogLevel("error", "error adding env vars: %w\n", err)
+		resources.LogLevel("error", "error adding env vars: %w\n", err)
 		os.Exit(1)
 	}
 
 	kubeconfig = os.Getenv("KUBE_CONFIG")
 	if kubeconfig == "" {
 		// gets a cluster from terraform.
-		cluster = shared.ClusterConfig(cfg.Product, cfg.Module)
+		cluster = resources.ClusterConfig(cfg.Product, cfg.Module)
 	} else {
 		// gets a cluster from kubeconfig.
-		cluster = shared.KubeConfigCluster(kubeconfig)
+		cluster = resources.KubeConfigCluster(kubeconfig)
 	}
 
 	k8sClient, err = k8s.AddClient()
 	if err != nil {
-		shared.LogLevel("error", "error adding k8s: %w\n", err)
+		resources.LogLevel("error", "error adding k8s: %w\n", err)
 		os.Exit(1)
 	}
 
@@ -61,7 +61,7 @@ func TestSelinuxSuite(t *testing.T) {
 var _ = AfterSuite(func() {
 	if customflag.ServiceFlag.Destroy {
 		testcase.TestUninstallPolicy(cluster, true)
-		status, err := shared.DestroyInfrastructure(cfg.Product, cfg.Module)
+		status, err := resources.DestroyInfrastructure(cfg.Product, cfg.Module)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(status).To(Equal("cluster destroyed"))
 	}

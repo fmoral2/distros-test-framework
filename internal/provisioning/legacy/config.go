@@ -8,17 +8,19 @@ import (
 	"github.com/gruntwork-io/terratest/modules/terraform"
 
 	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
-	"github.com/rancher/distros-test-framework/internal/provisioning"
+	"github.com/rancher/distros-test-framework/internal/provisioning/driver"
 	"github.com/rancher/distros-test-framework/internal/resources"
 )
 
 var (
 	once    sync.Once
-	cluster *provisioning.Cluster
+	cluster *driver.Cluster
 )
 
 // ClusterConfig returns a singleton cluster with all terraform config and vars.
-func ClusterConfig(product, module string) *provisioning.Cluster {
+func ClusterConfig(product, module string) *driver.Cluster {
+	resources.LogLevel("info", "Start provisioning with legacy infrastructure for %s", product)
+
 	once.Do(func() {
 		var err error
 		cluster, err = newCluster(product, module)

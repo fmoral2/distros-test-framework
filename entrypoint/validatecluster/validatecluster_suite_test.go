@@ -12,7 +12,8 @@ import (
 	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
 	"github.com/rancher/distros-test-framework/internal/pkg/qase"
 	"github.com/rancher/distros-test-framework/internal/pkg/testcase"
-	"github.com/rancher/distros-test-framework/internal/provisioning/qainfra"
+	"github.com/rancher/distros-test-framework/internal/provisioning/driver"
+	"github.com/rancher/distros-test-framework/internal/provisioning/legacy"
 	"github.com/rancher/distros-test-framework/internal/report"
 	"github.com/rancher/distros-test-framework/internal/resources"
 
@@ -23,8 +24,8 @@ import (
 var (
 	qaseReport    = os.Getenv("REPORT_TO_QASE")
 	flags         *customflag.FlagConfig
-	cluster       *resources.Cluster
-	infraConfig   qainfra.Config
+	cluster       *driver.Cluster
+	infraConfig   *driver.InfraConfig
 	cfg           *config.Env
 	reportSummary string
 	reportErr     error
@@ -46,7 +47,7 @@ func TestMain(m *testing.M) {
 
 	checkSelinuxTest()
 
-	setupCluster()
+	setupClusterInfra()
 
 	os.Exit(m.Run())
 }
@@ -64,37 +65,48 @@ func checkSelinuxTest() {
 	resources.LogLevel("info", "Running selinux test")
 }
 
-func setupCluster() {
+func setupClusterInfra() {
 	kubeconfig := os.Getenv("KUBE_CONFIG")
 	if kubeconfig != "" {
 		// gets a cluster from existing kubeconfig.
-		cluster = resources.KubeConfigCluster(kubeconfig)
+		cluster = legacy.KubeConfigCluster(kubeconfig)
 		resources.LogLevel("info", "Using existing cluster from kubeconfig")
 
 		return
 	}
 
-	infraConfig = qainfra.Config{
+	// initial data load needed for provisioning comming from config env vars.
+	infraConfig = &driver.InfraConfig{
 		Product:        cfg.Product,
 		Module:         cfg.Module,
 		ResourceName:   cfg.ResourceName,
 		Provisioner:    cfg.InfraProvider,
 		InstallVersion: cfg.InstallVersion,
-		TFVars:         cfg.TFVars,
 		QAInfraModule:  cfg.QAInfraModule,
-		InfraProvisionerConfig: &qainfra.InfraProvisionerConfig{
-			SSHConfig: resources.SSHConfig{
-				User:    cfg.SSHUser,
-				KeyPath: cfg.SSHKeyPath,
+		NodeOS:         cfg.NodeOS,
+		CNI:            cfg.CNI,
+
+		Cluster: &driver.Cluster{
+			Config: driver.Config{
+				Arch:        cfg.Arch,
+				ServerFlags: cfg.ServerFlags,
+				WorkerFlags: cfg.WorkerFlags,
+			},
+			SSH: driver.SSHConfig{
+				User:        cfg.SSHUser,
+				PrivKeyPath: cfg.SSHKeyPath,
+				KeyName:     cfg.SSHKeyName,
 			},
 		},
 	}
 
-	cluster, err = provisioning.ProvisionInfrastructure(infraConfig, cluster)
+	cluster, err = provisioning.ProvisionInfrastructure(infraConfig)
 	if err != nil {
 		resources.LogLevel("error", "error provisioning infrastructure: %w\n", err)
 		os.Exit(1)
 	}
+
+	resources.LogLevel("info", "Cluster provisioned successfully with %+v", cluster)
 }
 
 func TestValidateClusterSuite(t *testing.T) {
@@ -136,7 +148,7 @@ var _ = AfterSuite(func() {
 		}
 
 		status, err := provisioning.DestroyInfrastructure(infraConfig.Provisioner, infraConfig.Product, infraConfig.Module)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(status).To(Equal("cluster destroyed"))
 	}
 })

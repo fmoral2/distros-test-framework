@@ -9,16 +9,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/rancher/distros-test-framework/pkg/customflag"
-	"github.com/rancher/distros-test-framework/pkg/qase"
-	"github.com/rancher/distros-test-framework/shared"
 	"github.com/rancher/distros-test-framework/config"
+	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
+	"github.com/rancher/distros-test-framework/internal/pkg/qase"
+	"github.com/rancher/distros-test-framework/internal/resources"
 )
 
 var (
 	qaseReport    = os.Getenv("REPORT_TO_QASE")
 	kubeconfig    string
-	cluster       *shared.Cluster
+	cluster       *resources.Cluster
 	flags         *customflag.FlagConfig
 	cfg           *config.Env
 	reportSummary string
@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 	cfg, err = config.AddEnv()
 	if err != nil {
-		shared.LogLevel("error", "error adding env vars: %w\n", err)
+		resources.LogLevel("error", "error adding env vars: %w\n", err)
 		os.Exit(1)
 	}
 
@@ -43,10 +43,10 @@ func TestMain(m *testing.M) {
 	kubeconfig = os.Getenv("KUBE_CONFIG")
 	if kubeconfig == "" {
 		// gets a cluster from terraform.
-		cluster = shared.ClusterConfig(cfg.Product, cfg.Module)
+		cluster = resources.ClusterConfig(cfg.Product, cfg.Module)
 	} else {
 		// gets a cluster from kubeconfig.
-		cluster = shared.KubeConfigCluster(kubeconfig)
+		cluster = resources.KubeConfigCluster(kubeconfig)
 	}
 
 	os.Exit(m.Run())
@@ -60,14 +60,14 @@ func TestSecretsEncryptionSuite(t *testing.T) {
 func validateSecretsEncryptFlag() {
 	if cfg.Product == "k3s" {
 		if !strings.Contains(os.Getenv("server_flags"), "secrets-encryption:") {
-			shared.LogLevel("error", "Add secrets-encryption:true to server_flags for this test")
+			resources.LogLevel("error", "Add secrets-encryption:true to server_flags for this test")
 			os.Exit(1)
 		}
 	}
 
 	if strings.Contains(os.Getenv("server_flags"), "secretbox") &&
 		flags.SecretsEncrypt.Method != "rotate-keys" {
-		shared.LogLevel("info", "secretbox provider is supported only with rotate-keys operation")
+		resources.LogLevel("info", "secretbox provider is supported only with rotate-keys operation")
 		flags.SecretsEncrypt.Method = "rotate-keys"
 	}
 }
@@ -80,18 +80,18 @@ var _ = ReportAfterSuite("Secrets Encryption Test Suite", func(report Report) {
 
 		qaseClient.SpecReportTestResults(qaseClient.Ctx, cluster, &report, reportSummary)
 	} else {
-		shared.LogLevel("info", "Qase reporting is not enabled")
+		resources.LogLevel("info", "Qase reporting is not enabled")
 	}
 })
 
 var _ = AfterSuite(func() {
-	reportSummary, reportErr = shared.SummaryReportData(cluster, flags)
+	reportSummary, reportErr = resources.SummaryReportData(cluster, flags)
 	if reportErr != nil {
-		shared.LogLevel("error", "error getting report summary data: %v\n", reportErr)
+		resources.LogLevel("error", "error getting report summary data: %v\n", reportErr)
 	}
 
 	if customflag.ServiceFlag.Destroy {
-		status, err := shared.DestroyInfrastructure(cfg.Product, cfg.Module)
+		status, err := resources.DestroyInfrastructure(cfg.Product, cfg.Module)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(status).To(Equal("cluster destroyed"))
 	}

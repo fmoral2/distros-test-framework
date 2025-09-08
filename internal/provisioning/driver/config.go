@@ -1,4 +1,4 @@
-package contract
+package driver
 
 type InfraConfig struct {
 	Provisioner    string
@@ -6,35 +6,32 @@ type InfraConfig struct {
 	Product        string
 	Module         string
 	InstallVersion string
-	TFVars         string
 	QAInfraModule  string
-	SSHKeyPath     string
-	SSHUser        string
-	*InfraProvisionerConfig
-	Cluster *Cluster
+	NodeOS         string
+	CNI            string
+
+	Cluster          *Cluster
+	InfraProvisioner *InfraProvisionerConfig
 }
 
-// InfraProvisioner implements the Provider interface for qa-infra automation
+// InfraProvisioner implements the Provider interface for qainfra automation compatibility.
 type InfraProvisioner struct{}
 
-// InfraProvisionerConfig holds comprehensive configuration for qa-infra provisioning
 type InfraProvisionerConfig struct {
-	Workspace      string
-	UniqueID       string
-	Product        string
-	InstallVersion string
-	IsContainer    bool
-	QAInfraModule  string
-	SSHConfig      provisioning.SSHConfig
+	Workspace     string
+	UniqueID      string
+	QAInfraModule string
+	IsContainer   bool
 
 	RootDir        string
-	NodeSource     string
+	TFNodeSource   string
 	TempDir        string
 	KubeconfigPath string
 
 	Inventory
 	Ansible
 	Terraform
+	OpenTofuOutputs
 
 	AirgapSetup bool
 	ProxySetup  bool
@@ -52,4 +49,9 @@ type Inventory struct {
 type Terraform struct {
 	TFVarsPath string
 	MainTfPath string
+}
+
+type OpenTofuOutputs struct {
+	KubeAPIHost string
+	FQDN        string
 }

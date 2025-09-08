@@ -228,8 +228,8 @@ func resolveSSHConfig() (string, string, error) {
 		sshUser = os.Getenv("aws_user")
 
 		return sshUser, sshKeyPath, nil
-	case "qa-infra":
-		sshKeyPath = os.Getenv("SSH_KEY_PATH")
+	case "qainfra":
+		sshKeyPath = os.Getenv("SSH_LOCAL_KEY_PATH")
 		sshUser = os.Getenv("SSH_USER")
 
 		if IsRunningInContainer() {

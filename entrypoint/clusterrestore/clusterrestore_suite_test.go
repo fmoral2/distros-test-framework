@@ -6,11 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rancher/distros-test-framework/pkg/aws"
-	"github.com/rancher/distros-test-framework/pkg/customflag"
-	"github.com/rancher/distros-test-framework/pkg/qase"
-	"github.com/rancher/distros-test-framework/shared"
 	"github.com/rancher/distros-test-framework/config"
+	"github.com/rancher/distros-test-framework/internal/pkg/aws"
+	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
+	"github.com/rancher/distros-test-framework/internal/pkg/qase"
+	"github.com/rancher/distros-test-framework/internal/provisioning"
+	"github.com/rancher/distros-test-framework/internal/provisioning/driver"
+	"github.com/rancher/distros-test-framework/internal/provisioning/legacy"
+	"github.com/rancher/distros-test-framework/internal/resources"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -21,7 +24,7 @@ var (
 	flags         *customflag.FlagConfig
 	kubeconfig    string
 	cfg           *config.Env
-	cluster       *shared.Cluster
+	cluster       *driver.Cluster
 	reportSummary string
 	reportErr     error
 	awsClient     *aws.Client
@@ -38,7 +41,7 @@ func TestMain(m *testing.M) {
 
 	cfg, err = config.AddEnv()
 	if err != nil {
-		shared.LogLevel("error", "error adding env vars: %w\n", err)
+		resources.LogLevel("error", "error adding env vars: %w\n", err)
 		os.Exit(1)
 	}
 
@@ -48,15 +51,15 @@ func TestMain(m *testing.M) {
 	kubeconfig = os.Getenv("KUBE_CONFIG")
 	if kubeconfig == "" {
 		// gets a cluster from terraform.
-		cluster = shared.ClusterConfig(cfg.Product, cfg.Module)
+		cluster = legacy.ClusterConfig(cfg.Product, cfg.Module)
 	} else {
 		// gets a cluster from kubeconfig.
-		cluster = shared.KubeConfigCluster(kubeconfig)
+		cluster = legacy.KubeConfigCluster(kubeconfig)
 	}
 
 	awsClient, err = aws.AddClient(cluster)
 	if err != nil {
-		shared.LogLevel("error", "error adding aws nodes: %s", err)
+		resources.LogLevel("error", "error adding aws nodes: %s", err)
 		os.Exit(1)
 	}
 
@@ -69,13 +72,13 @@ func TestClusterResetRestoreSuite(t *testing.T) {
 }
 
 var _ = AfterSuite(func() {
-	reportSummary, reportErr = shared.SummaryReportData(cluster, flags)
+	reportSummary, reportErr = resources.SummaryReportData(cluster, flags)
 	if reportErr != nil {
-		shared.LogLevel("error", "error getting report summary data: %v\n", reportErr)
+		resources.LogLevel("error", "error getting report summary data: %v\n", reportErr)
 	}
 
 	if customflag.ServiceFlag.Destroy {
-		status, err := shared.DestroyInfrastructure(cfg.Product, cfg.Module)
+		status, err := resources.DestroyInfrastructure(cfg.Product, cfg.Module)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(status).To(Equal("cluster destroyed"))
 	}
@@ -89,7 +92,7 @@ var _ = ReportAfterSuite("Cluster Reset Restore Test Suite", func(report Report)
 
 		qaseClient.SpecReportTestResults(qaseClient.Ctx, cluster, &report, reportSummary)
 	} else {
-		shared.LogLevel("info", "Qase reporting is not enabled")
+		resources.LogLevel("info", "Qase reporting is not enabled")
 	}
 })
 
@@ -104,7 +107,7 @@ func checkUnsupportedFlags() {
 		strings.Contains(serverFlags, "selinux") ||
 		strings.Contains(serverFlags, "protect-kernel-defaults") ||
 		strings.Contains(serverFlags, "/etc/rancher/rke2/custom-psa.yaml") {
-		shared.LogLevel("error", "hardening flags are not supported for now")
+		resources.LogLevel("error", "hardening flags are not supported for now")
 		os.Exit(1)
 	}
 }

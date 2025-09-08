@@ -1,24 +1,18 @@
 package legacy
 
 import (
-	"github.com/rancher/distros-test-framework/internal/provisioning/contract"
-	"github.com/rancher/distros-test-framework/internal/resources"
+	"github.com/rancher/distros-test-framework/internal/provisioning/driver"
 )
 
-type Provider struct {
-	// dependências específicas do legacy (binários, paths, etc)
-}
+// Provider implements the driver.Provisioner interface for legacy infrastructure
+type Provider struct{}
 
 func New() *Provider { return &Provider{} }
 
-func (p *Provider) Provision(cfg contract.InfraConfig, _ *contract.Cluster) (*contract.Cluster, error) {
-	resources.LogLevel("info", "Start provisioning with legacy infrastructure for %s", cfg.Product)
-	// ... lógica atual de provisioning legacy (antes: legacy.Provision)
-	// retorne *contract.Cluster
-	return &contract.Cluster{ /* ... */ }, nil
+func (p *Provider) Provision(cfg *driver.InfraConfig) (*driver.Cluster, error) {
+	return Provision(cfg.Product, cfg.Module)
 }
 
-func (p *Provider) Destroy(c *contract.Cluster) error {
-	// ... lógica atual de destroy legacy
-	return nil
+func (p *Provider) Destroy(product, module string) (string, error) {
+	return Destroy(product, module)
 }

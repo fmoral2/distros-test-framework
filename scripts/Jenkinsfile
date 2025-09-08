@@ -74,9 +74,10 @@ node {
                   //update info in .env file
                   def data = "ENV_PRODUCT=${env.PRODUCT_NAME}\nENV_TFVARS=${env.PRODUCT_NAME}.tfvars\n" +
                   "KUBE_CONFIG=${env.KUBE_CONFIG}\nBASTION_IP=${env.BASTION_IP}\nLOG_LEVEL=${env.LOG_LEVEL}\nINSTALL_VERSION=${env.INSTALL_VERSION}\n" +
-                   "ENV_MODULE=${module}\nINSTALL_CHANNEL=${env.INSTALL_CHANNEL}\n" +
-                   "PROVISIONER=${env.PROVISIONER ?: 'legacy'}\nAWS_SSH_USER=${env.AWS_SSH_USER ?: 'ec2-user'}\n" +
-                   'SSH_KEY_PATH=/go/src/github.com/rancher/distros-test-framework/config/.ssh/aws_key.pem\n'
+                    //update QA_INFRA_MODULE,AWS_SSH_USER.
+                   "ARCH=${env.ARCH ?: 'amd64'}\nENV_MODULE=${module}\nINSTALL_CHANNEL=${env.INSTALL_CHANNEL}\nQA_INFRA_MODULE='aws'" +
+                   "PROVISIONER=${env.PROVISIONER ?: 'qainfra'}\nSSH_USER=${env.AWS_SSH_USER ?: 'ec2-user'}\nSSH_KEY_NAME='jenkins-rke-validation'\nNODE_OS='sles15'\nCNI='calico'\nRESOURCE_NAME='${env.RESOURCE_NAME}'" +
+                   'SSH_LOCAL_KEY_PATH=/go/src/github.com/rancher/distros-test-framework/config/.ssh/aws_key.pem\n'
                     //adding data to .env file
                     writeFile(file: '.env', text: data)
 
@@ -107,7 +108,7 @@ node {
                     sh """
                     docker run --name ${testContainer} -t \
                         --env-file ${envFile} \
-                        --env-file ./shared/config/.env \
+                        --env-file ./config/.env \
                         --env-file ${qaseEnvFile} \
                         -e TEST_ARGS='${env.TEST_ARGS}' \
                         ${imageName} sh -c "env && chmod 400 /go/src/github.com/rancher/distros-test-framework/config/.ssh/aws_key.pem && \

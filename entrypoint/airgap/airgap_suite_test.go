@@ -9,6 +9,9 @@ import (
 	"github.com/rancher/distros-test-framework/config"
 	"github.com/rancher/distros-test-framework/internal/pkg/customflag"
 	"github.com/rancher/distros-test-framework/internal/pkg/qase"
+	"github.com/rancher/distros-test-framework/internal/provisioning"
+	"github.com/rancher/distros-test-framework/internal/provisioning/driver"
+	"github.com/rancher/distros-test-framework/internal/provisioning/legacy"
 	"github.com/rancher/distros-test-framework/internal/report"
 	"github.com/rancher/distros-test-framework/internal/resources"
 
@@ -19,7 +22,7 @@ import (
 var (
 	qaseReport    = os.Getenv("REPORT_TO_QASE")
 	flags         *customflag.FlagConfig
-	cluster       *resources.Cluster
+	cluster       *driver.Cluster
 	cfg           *config.Env
 	reportSummary string
 	reportErr     error
@@ -44,7 +47,7 @@ func TestMain(m *testing.M) {
 	validateAirgap()
 
 	// TODO: Implement using kubeconfig for airgap setup
-	cluster = resources.ClusterConfig(cfg.Product, cfg.Module)
+	cluster = legacy.ClusterConfig(cfg.Product, cfg.Module)
 
 	os.Exit(m.Run())
 }
@@ -119,9 +122,9 @@ var _ = AfterSuite(func() {
 	}
 
 	if customflag.ServiceFlag.Destroy {
-		status, err := resources.DestroyInfrastructure(cfg.Product, cfg.Module)
+		err := provisioning.DestroyInfrastructure()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(status).To(Equal("cluster destroyed"))
+		// Expect(status).To(Equal("cluster destroyed"))
 	}
 })
 

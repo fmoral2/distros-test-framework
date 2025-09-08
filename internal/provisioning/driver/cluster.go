@@ -1,6 +1,5 @@
-package contract
+package driver
 
-// Cluster represents a Kubernetes cluster with all its configuration and state
 type Cluster struct {
 	Status       string
 	ServerIPs    []string
@@ -33,11 +32,10 @@ type AwsConfig struct {
 
 // SSHConfig holds SSH connection configuration
 type SSHConfig struct {
-	KeyPath string
-	PubKey  string
-	PrivKey string
-	KeyName string
-	User    string
+	PrivKeyPath string
+	PubKeyPath  string
+	User        string
+	KeyName     string
 }
 
 // EC2 holds EC2-specific configuration
@@ -46,13 +44,13 @@ type EC2 struct {
 	VolumeSize    string
 	VolumeType    string
 	InstanceClass string
-	KeyName       string
 }
 
 // Config holds cluster configuration
 type Config struct {
 	DataStore           string
 	Product             string
+	Module              string
 	Channel             string
 	InstallMethod       string
 	InstallMode         string
@@ -88,29 +86,4 @@ type TestConfig struct {
 type BastionConfig struct {
 	PublicIPv4Addr string
 	PublicDNS      string
-}
-
-// Node represents a cluster node
-type Node struct {
-	Name              string
-	Status            string
-	Roles             string
-	Version           string
-	InternalIP        string
-	ExternalIP        string
-	OperationalSystem string
-}
-
-// Pod represents a Kubernetes pod
-type Pod struct {
-	NameSpace      string
-	Name           string
-	Ready          string
-	Status         string
-	Restarts       string
-	Age            string
-	IP             string
-	Node           string
-	NominatedNode  string
-	ReadinessGates string
 }
