@@ -20,6 +20,10 @@ var _ = Describe("Test Airgap cluster with Private Registry:", Ordered, func() {
 	It("Installs product on airgapped nodes", func() {
 		testcase.TestPrivateRegistry(cluster, flags)
 	})
+	It("Installs product on airgapped nodes", func() {
+		testcase.TestPrivateRegistry(cluster, flags)
+	})
+
 
 	It("Validates Nodes", func() {
 		testcase.TestNodeStatusUsingBastion(
