@@ -15,6 +15,10 @@ var _ = Describe("Test:", func() {
 		testcase.TestBuildCluster(cluster)
 	})
 
+	It("Start Up with no issues", func() {
+		testcase.TestBuildCluster(cluster)
+	})
+
 	It("Validate Nodes", func() {
 		testcase.TestNodeStatus(
 			cluster,
